@@ -1,0 +1,347 @@
+<html>
+<head>
+	<title>CrazyMaze</title>
+	<link rel="stylesheet" href="css/style.css">
+    <script src="js/jquery-1.12.4.min.js"></script>
+</head>
+<div class="settings" id="size">
+    <input class="interior" id="enterSize" type="text" value="" placeHolder="Size" maxlength="3" spellcheck="false"></input>
+    <button class="interior" id="enter">Reload</button>
+    <button class="interior" id="solve">Solve</button>
+</div>
+<!-- <div class="settings" id="solver">
+    
+</div> -->
+    <canvas id="myCanvas" resize></canvas>
+    <script type="text/javascript" src="js/paper-full.js"></script>
+    <script type="text/paperscript" canvas="myCanvas">
+var canvas = document.getElementById('myCanvas');
+var context = canvas.getContext('2d');
+
+var size = 10, increment = 0, xStart = 0, start = false, colorchanging = false;
+
+size = Math.floor((Math.random() * 20) + 7);
+
+$('#enter').click(function () {
+    project.clear();
+    boardMain = [];
+    start = false;
+    x = 0;
+    y = 0;
+    visited = [];
+    comebacks = [];
+    color1 = getRandomColor();
+    size = $("#enterSize").val();
+    setup();
+});
+$('#solve').click(function () {
+    start = true;
+});
+
+var boardMain = [];
+
+function setup() {// adding tiles to array
+    increment = Math.floor(window.innerHeight / (size));
+    xStart = Math.floor((window.innerWidth - size * increment) / 2);
+    for (var i = 0; i < size; i += 1) {
+        var row = [];
+        for (var ii = 0; ii < size; ii += 1) {
+
+            var tileObject = {
+                path: new Rectangle(),
+                remove: false,
+                checked: false,
+                searched: false,
+                timeschecked: 0,
+                top: true,
+                bot: true,
+                left: true,
+                right: true,
+                leftedge: false,
+                rightedge: false,
+                topedge: false,
+                botedge: false
+            }
+
+            if (i === 0) {
+                tileObject.top = true;
+                tileObject.topedge = true;
+            } else if (i === size - 1) {
+                tileObject.bot = true;
+                tileObject.botedge = true;
+            }
+            if (ii === 0) {
+                tileObject.left = true;
+                tileObject.leftedge = true;
+            } else if (ii === size - 1) {
+                tileObject.right = true;
+                tileObject.rightedge = true;
+            }
+
+            row.push(tileObject);
+        }
+        boardMain.push(row);
+    }
+
+    var xx = 0, yy = 0;
+    var visited = []
+    var coords = {
+        x: xx,
+        y: yy
+    };
+    while (true) {
+        var coords = {
+            x: xx,
+            y: yy
+        };
+        if (!boardMain[yy][xx].checked)
+            visited.push(coords);
+        boardMain[yy][xx].checked = true;
+        var random = Math.floor((Math.random() * 4) + 1);
+        var possibleSides = [];
+        var numSpots = 0;
+        if (boardMain[yy][xx].left && !boardMain[yy][xx].leftedge && !boardMain[yy][xx-1].checked) {
+            numSpots += 1;
+            possibleSides.push(1);
+        }
+        if (boardMain[yy][xx].right && !boardMain[yy][xx].rightedge && !boardMain[yy][xx+1].checked) {
+            numSpots += 1;
+            possibleSides.push(2);
+        }
+        if (boardMain[yy][xx].top && !boardMain[yy][xx].topedge && !boardMain[yy-1][xx].checked) {
+            numSpots += 1;
+            possibleSides.push(3);
+        }
+        if (boardMain[yy][xx].bot && !boardMain[yy][xx].botedge && !boardMain[yy+1][xx].checked) {
+            numSpots += 1;
+            possibleSides.push(4);
+        }
+
+        var rando = Math.floor((Math.random() * possibleSides.length) + 1);
+        for (var r = 0; r < rando; r += 1) {
+            random = possibleSides[r];
+        }
+
+        if (random == 1) {
+            boardMain[yy][xx].left = false;
+            boardMain[yy][xx-1].right = false;
+            xx -= 1;
+        }
+        else if (random == 2) {
+            boardMain[yy][xx].right = false;
+            boardMain[yy][xx+1].left = false;
+            xx += 1;
+        }
+        else if (random == 3) {
+            boardMain[yy][xx].top = false;
+            boardMain[yy-1][xx].bot = false;
+            yy -= 1;
+        }
+        else if (random == 4) {
+            boardMain[yy][xx].bot = false;
+            boardMain[yy+1][xx].top = false;
+            yy += 1;
+        }
+        else {
+            visited.splice(visited.length-1, 1);
+            if (visited.length == 0) {
+                break;
+            }
+            xx = visited[visited.length-1].x;
+            yy = visited[visited.length-1].y;
+        }
+    }
+
+    var x = xStart;
+    var y = 0;
+    var color = getRandomColor();
+    for (var i = 0; i < size; i += 1) { // drawing the rooms
+        for (var ii = 0; ii < size; ii += 1) {
+        	var rectangle = new Rectangle(new Point(x, y), new Size(increment, increment));
+            var cornerSize = new Size(10, 10);
+            var shape = new Shape.Rectangle(rectangle);
+            shape.fillColor = color;
+
+            boardMain[i][ii].path = shape;
+            x+=increment;
+        }
+        y += increment;
+        x = xStart;
+    }
+
+    var x = xStart;
+    var y = 0;
+    for (var i = 0; i < size; i += 1) { // drawing the walls
+        for (var ii = 0; ii < size; ii += 1) {
+            if (boardMain[i][ii].top === true) {
+
+                var from = new Point(x, y);
+                var to = new Point(x + increment, y);
+                var path = new Path.Line(from, to);
+                path.strokeColor = 'white';
+                path.strokeWidth =increment/10;
+
+                path.strokeCap = "round";
+
+            }
+            if (boardMain[i][ii].bot === true) {
+
+                var from = new Point(x, y + increment);
+                var to = new Point(x + increment, y + increment);
+                var path = new Path.Line(from, to);
+                path.strokeColor = 'white';
+                path.strokeWidth =increment/10;
+
+                path.strokeCap = "round";
+            }
+            if (boardMain[i][ii].left === true) {
+
+                var from = new Point(x, y);
+                var to = new Point(x, y + increment);
+                var path = new Path.Line(from, to);
+                path.strokeColor = 'white';
+                path.strokeWidth = increment/10;
+
+                path.strokeCap = "round";
+                
+            }
+            if (boardMain[i][ii].right === true) {
+
+                var from = new Point(x + increment, y);
+                var to = new Point(x + increment, y + increment);
+                var path = new Path.Line(from, to);
+                path.strokeColor = 'white';
+                path.strokeWidth = increment/10;
+
+                path.strokeCap = "round";
+            }
+            
+            x+=increment;
+        }
+        y += increment;
+        x = xStart;
+    }
+}
+
+setup();
+
+function getRandomColor() {
+    var letters = '0123456789ABCDEF'.split('');
+    var color = '#';
+    for (var i = 0; i < 6; i++ ) {
+        color += letters[Math.floor(Math.random() * 16)];
+    }
+    return color;
+}
+
+function isNegative(number) { // check if number is negative
+    if (number > 0) {
+        return true;
+    } else if (number < 0) {
+        return false;
+    }
+}
+var x = 0, y = 0;
+var visited = [];
+var comebacks = [];
+var color1 = getRandomColor();
+function onFrame(event) { // runs 60 times per second TIP: Dont put a lot of loops in here because it will slow the game down a BUNCH
+    if (start) {
+
+        if (x === size-1 && y === size-1) {
+            start = false;
+        }
+
+        boardMain[y][x].path.fillColor = color1;
+
+        boardMain[y][x].searched = true;
+        boardMain[y][x].timeschecked += 1;
+
+        var coords = {
+            x: x,
+            y: y
+        };
+        visited.push(coords);
+
+        var numberofspaces = 0;
+
+        if (!boardMain[y][x].top) {
+            numberofspaces += 1;
+        }
+        if (!boardMain[y][x].bot) {
+            numberofspaces += 1;
+        }
+        if (!boardMain[y][x].left) {
+            numberofspaces += 1;
+        }
+        if (!boardMain[y][x].right) {
+            numberofspaces += 1;
+        }
+
+        if (boardMain[y][x].timeschecked < numberofspaces) {
+            var coord = {
+                x: x,
+                y: y
+            };
+            comebacks.push(coord);
+        }
+
+        if (!boardMain[y][x].rightedge && !boardMain[y][x].right && !boardMain[y][x+1].searched) {
+            x += 1;
+        }
+        else if (!boardMain[y][x].botedge && !boardMain[y][x].bot && !boardMain[y+1][x].searched) {
+            y += 1;
+        }
+        else if (!boardMain[y][x].topedge && !boardMain[y][x].top && !boardMain[y-1][x].searched) {
+            y -= 1;
+        }
+        else if (!boardMain[y][x].leftedge && !boardMain[y][x].left && !boardMain[y][x-1].searched) {
+            x -= 1;
+        }
+        
+        else {
+            if (comebacks.length === 0) {
+                start = false;
+            }
+            x = comebacks[comebacks.length-1].x;
+            y = comebacks[comebacks.length-1].y;
+            comebacks.splice(comebacks.length-1,1);
+            if (colorchanging) {
+                color1 = getRandomColor();
+            }
+        }
+    }
+}
+
+function onKeyDown(event) {
+
+}
+
+function onKeyUp(event) {
+
+}
+
+function onMouseMove(event) {
+
+}
+
+function onMouseDrag(event) {
+
+}
+
+function onMouseDown(event) {
+
+}
+
+function onMouseUp(event) {
+    if (event.point.x > window.innerWidth-20 && event.point.y > window.innerHeight-20) {
+        colorchanging = !colorchanging;
+    }
+}
+
+
+
+
+    </script>
+</body>
+</html>
