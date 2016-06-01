@@ -7,18 +7,18 @@
 <div class="settings" id="size">
     <input class="interior" id="enterSize" type="text" value="" placeHolder="Size" maxlength="3" spellcheck="false"></input>
     <button class="interior" id="enter">Reload</button>
+</div>
+<div class="settings" id="solver">
+    <input class="interior" id="enterSpeed" type="text" value="" placeHolder="Speed" maxlength="6" spellcheck="false"></input>
     <button class="interior" id="solve">Solve</button>
 </div>
-<!-- <div class="settings" id="solver">
-    
-</div> -->
     <canvas id="myCanvas" resize></canvas>
     <script type="text/javascript" src="js/paper-full.js"></script>
     <script type="text/paperscript" canvas="myCanvas">
-var canvas = document.getElementById('myCanvas');
-var context = canvas.getContext('2d');
 
-var size = 10, increment = 0, xStart = 0, start = false, colorchanging = false;
+var size = 10, increment = 0, xStart = 0, start = false, colorchanging = false, speed = 1;
+
+var solveTimer;
 
 size = Math.floor((Math.random() * 20) + 7);
 
@@ -32,10 +32,24 @@ $('#enter').click(function () {
     comebacks = [];
     color1 = getRandomColor();
     size = $("#enterSize").val();
+    if (size === '') {
+        size = Math.floor((Math.random() * 20) + 17);
+    }
+    clearInterval(solveTimer);
     setup();
 });
 $('#solve').click(function () {
     start = true;
+    speed = $("#enterSpeed").val();
+    if (speed === '') {
+        speed = 1;
+    }
+    x = 0;
+    y = 0;
+    visited = [];
+    comebacks = [];
+    color1 = getRandomColor();
+    solveTimer = setInterval(solve, speed);
 });
 
 var boardMain = [];
@@ -241,11 +255,12 @@ function isNegative(number) { // check if number is negative
         return false;
     }
 }
+
 var x = 0, y = 0;
 var visited = [];
 var comebacks = [];
 var color1 = getRandomColor();
-function onFrame(event) { // runs 60 times per second TIP: Dont put a lot of loops in here because it will slow the game down a BUNCH
+function solve() {
     if (start) {
 
         if (x === size-1 && y === size-1) {
@@ -311,6 +326,14 @@ function onFrame(event) { // runs 60 times per second TIP: Dont put a lot of loo
             }
         }
     }
+}
+
+// var x = 0, y = 0;
+// var visited = [];
+// var comebacks = [];
+// var color1 = getRandomColor();
+function onFrame(event) { // runs 60 times per second TIP: Dont put a lot of loops in here because it will slow the game down a BUNCH
+
 }
 
 function onKeyDown(event) {
