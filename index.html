@@ -17,6 +17,7 @@
     <script type="text/paperscript" canvas="myCanvas">
 
 var size = 10, increment = 0, xStart = 0, start = false, colorchanging = false, speed = 1;
+var color = getRandomColor();
 
 var solveTimer;
 
@@ -30,8 +31,9 @@ $('#enter').click(function () {
     y = 0;
     visited = [];
     comebacks = [];
-    color1 = getRandomColor();
+    color = getRandomColor();
     size = $("#enterSize").val();
+    lastComeback = false;
     if (size === '') {
         size = Math.floor((Math.random() * 20) + 17);
     }
@@ -48,6 +50,7 @@ $('#solve').click(function () {
     y = 0;
     visited = [];
     comebacks = [];
+    lastComeback = false;
     color1 = getRandomColor();
     solveTimer = setInterval(solve, speed);
 });
@@ -168,7 +171,6 @@ function setup() {// adding tiles to array
 
     var x = xStart;
     var y = 0;
-    var color = getRandomColor();
     for (var i = 0; i < size; i += 1) { // drawing the rooms
         for (var ii = 0; ii < size; ii += 1) {
         	var rectangle = new Rectangle(new Point(x, y), new Size(increment, increment));
@@ -260,6 +262,7 @@ var x = 0, y = 0;
 var visited = [];
 var comebacks = [];
 var color1 = getRandomColor();
+var lastComeback = false;
 function solve() {
     if (start) {
 
@@ -301,6 +304,11 @@ function solve() {
             comebacks.push(coord);
         }
 
+        if (lastComeback) {// get rid of this if you want a cool map
+            boardMain[visited[visited.length-2].y][visited[visited.length-2].x].path.fillColor = color;
+        }
+        lastComeback = false;
+
         if (!boardMain[y][x].rightedge && !boardMain[y][x].right && !boardMain[y][x+1].searched) {
             x += 1;
         }
@@ -313,17 +321,25 @@ function solve() {
         else if (!boardMain[y][x].leftedge && !boardMain[y][x].left && !boardMain[y][x-1].searched) {
             x -= 1;
         }
-        
         else {
+
+            if (x === size-1 && y === size-1) {
+                start = false;
+            }
+
             if (comebacks.length === 0) {
                 start = false;
             }
             x = comebacks[comebacks.length-1].x;
             y = comebacks[comebacks.length-1].y;
             comebacks.splice(comebacks.length-1,1);
+            if (start) {// get rid of this if you want a cool map
+                boardMain[visited[visited.length-2].y][visited[visited.length-2].x].path.fillColor = color;
+            }
             if (colorchanging) {
                 color1 = getRandomColor();
             }
+            lastComeback = true;
         }
     }
 }
